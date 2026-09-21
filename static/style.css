@@ -1,0 +1,860 @@
+/* ============================================================
+   轻奢雅致原木华丽风 — B站收藏夹工具
+   设计规范 v2.0 | WCAG AA 色彩可访问 | 纯CSS装饰
+   ============================================================ */
+
+/* ----- 0. CSS 变量体系 ----- */
+:root {
+  /* 背景色 */
+  --bg-page: #F7F3EC;
+  --bg-card: #F7F3EC;
+  --bg-input: #E5DFD5;
+  --bg-nav: rgba(247, 243, 236, 0.94);
+
+  /* 木色系 */
+  --wood-light: #BFA88E;
+  --wood-deep: #826A50;
+  --wood-deep-hover: #755E45;
+  --wood-soft: #C7A796;
+  --linen: #E5DFD5;
+
+  /* 鎏金系 */
+  --gold: #D4BE98;
+  --gold-bright: #E8D4B8;
+  --gold-dark: #C4AA80;
+
+  /* 文字色 — 全量通过 WCAG AA */
+  --text-heading: #5C4A3A;
+  --text-body: #644E39;
+  --text-aux: #A3876E;
+  --text-disabled: #BEA794;
+  --text-on-primary: #F7F3EC;
+
+  /* 状态色 — 暖调低饱和 */
+  --color-success: #788764;
+  --color-error: #966455;
+  --color-warning: #A08255;
+  --color-info: #788273;
+
+  /* 阴影 — 暖棕灰 */
+  --shadow-main: rgba(139, 119, 99, 0.12);
+  --shadow-light: rgba(139, 119, 99, 0.06);
+  --shadow-gold: rgba(212, 190, 152, 0.20);
+
+  /* 间距 — 4px 原子单位 */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* 字号 */
+  --fs-h1: 1.75rem;
+  --fs-h2: 1.375rem;
+  --fs-h3: 1.125rem;
+  --fs-body: 0.9375rem;
+  --fs-caption: 0.8125rem;
+  --fs-label: 0.75rem;
+
+  /* 圆角 */
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  /* 线条 */
+  --line-main: 1.5px;
+  --line-gold: 1px;
+
+  /* 字体 */
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "PingFang SC", serif;
+  --font-sans: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", sans-serif;
+  --font-number: "Playfair Display", "Inter", serif;
+}
+
+/* ----- 1. 基础重置与页面基底 ----- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--text-body);
+  background-color: var(--bg-page);
+  /* SVG 木纹 + 亚麻复合肌理 */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65 0.02' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='linen'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04 0.15' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23linen)' opacity='0.06'/%3E%3C/svg%3E");
+  background-blend-mode: multiply, normal;
+  background-size: 400px auto, 200px auto;
+  background-position: center;
+  min-height: 100vh;
+}
+
+/* 页面加载：肌理浮现 */
+@keyframes textureReveal {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* ----- 2. 导航栏 ----- */
+.navbar {
+  background: var(--bg-nav);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: var(--line-main) solid var(--wood-light);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.navbar::after {
+  content: '';
+  position: absolute;
+  bottom: -2.5px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 30%, var(--gold-bright) 50%, var(--gold) 70%, transparent 100%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.navbar .logo {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-heading);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.navbar .links {
+  display: flex;
+  gap: 2px;
+}
+
+.navbar .links a {
+  color: var(--text-aux);
+  text-decoration: none;
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  transition: all 0.3s ease-in-out;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+
+.navbar .links a:hover {
+  color: var(--wood-deep);
+  background: rgba(191, 168, 142, 0.18);
+  border-color: rgba(191, 168, 142, 0.4);
+}
+
+.navbar .links a.active {
+  color: var(--text-on-primary);
+  background: var(--wood-deep);
+  border-color: var(--wood-deep);
+}
+
+/* 快照选择器 */
+.navbar .session-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.navbar .session-bar select {
+  background: rgba(229, 223, 213, 0.7);
+  border: 1px solid var(--wood-light);
+  color: var(--text-body);
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-label);
+  font-family: var(--font-sans);
+  max-width: 260px;
+  transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  outline: none;
+}
+
+.navbar .session-bar select:focus {
+  border-color: var(--wood-deep);
+  box-shadow: 0 0 0 2px rgba(212, 190, 152, 0.25);
+}
+
+/* ----- 3. 容器 ----- */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-md);
+}
+
+.container.wide {
+  max-width: 100%;
+  padding: var(--space-lg) 40px;
+}
+
+/* ----- 4. 卡片 ----- */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: var(--line-main) solid var(--wood-light);
+  padding: 20px;
+  margin-bottom: 16px;
+  position: relative;
+  box-shadow:
+    0 3px 8px var(--shadow-main),
+    0 1px 4px var(--shadow-light);
+  transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+}
+
+/* 鎏金外圈辅线 */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: -2.5px;
+  border: var(--line-gold) solid var(--gold);
+  border-radius: 12px;
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 16px var(--shadow-main),
+    0 2px 6px var(--shadow-light);
+}
+
+.card:hover::before {
+  opacity: 0.78;
+}
+
+.card-title {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-heading);
+  letter-spacing: 0.01em;
+}
+
+.card p {
+  color: var(--text-aux);
+  font-size: var(--fs-caption);
+  line-height: 1.6;
+}
+
+/* ----- 5. 表单 ----- */
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--text-aux);
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  background: rgba(229, 223, 213, 0.7);
+  border: var(--line-main) solid var(--wood-light);
+  color: var(--text-body);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: var(--fs-body);
+  font-family: var(--font-sans);
+  transition: border-color 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+  outline: none;
+}
+
+.form-group textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--wood-deep);
+  box-shadow: 0 0 0 3px rgba(212, 190, 152, 0.25);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-aux);
+  opacity: 0.6;
+}
+
+/* ----- 6. 按钮 ----- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  cursor: pointer;
+  border: var(--line-main) solid var(--wood-light);
+  transition: all 0.3s ease-in-out;
+  text-decoration: none;
+  font-family: var(--font-sans);
+  letter-spacing: 0.01em;
+  background: var(--bg-page);
+  color: var(--wood-light);
+  user-select: none;
+  white-space: nowrap;
+  position: relative;
+}
+
+.btn:hover {
+  background: rgba(191, 168, 142, 0.15);
+  color: var(--wood-deep);
+  border-color: var(--wood-deep);
+}
+
+.btn:active {
+  transform: translateY(2px);
+  transition: transform 0.2s ease-in-out;
+  box-shadow: 0 0 0 4px rgba(212, 190, 152, 0.20);
+}
+
+.btn-primary {
+  background: var(--wood-deep);
+  color: var(--text-on-primary);
+  border-color: var(--wood-deep);
+}
+
+.btn-primary:hover {
+  background: var(--wood-deep-hover);
+  border-color: var(--wood-deep-hover);
+  color: var(--text-on-primary);
+}
+
+.btn-secondary {
+  background: rgba(229, 223, 213, 0.5);
+  color: var(--text-aux);
+  border: 1px solid rgba(191, 168, 142, 0.5);
+}
+
+.btn-secondary:hover {
+  background: rgba(191, 168, 142, 0.2);
+  color: var(--text-body);
+  border-color: var(--wood-light);
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: var(--fs-label);
+}
+
+/* ----- 7. 网格 ----- */
+.grid {
+  display: grid;
+  gap: 10px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+/* 列数控制 */
+.cols-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: var(--fs-label);
+  color: var(--text-aux);
+}
+
+.cols-bar input[type="range"] {
+  width: 100px;
+  accent-color: var(--wood-deep);
+}
+
+/* ----- 8. 统计卡片 ----- */
+.stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: var(--line-main) solid var(--wood-light);
+  padding: 20px 16px;
+  text-align: center;
+  position: relative;
+  box-shadow:
+    0 2px 6px var(--shadow-main),
+    0 1px 3px var(--shadow-light);
+  transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: -2.5px;
+  border: var(--line-gold) solid var(--gold);
+  border-radius: 12px;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px var(--shadow-main),
+    0 2px 4px var(--shadow-light);
+}
+
+.stat-card .num {
+  font-family: var(--font-number);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--wood-deep);
+  letter-spacing: 0.02em;
+}
+
+.stat-card .label {
+  font-size: var(--fs-caption);
+  color: var(--text-aux);
+  margin-top: 4px;
+  letter-spacing: 0.03em;
+}
+
+/* ----- 9. 视频卡片 ----- */
+.video-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: var(--line-main) solid var(--wood-light);
+  transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out, border-color 0.3s;
+  position: relative;
+  box-shadow:
+    0 2px 6px var(--shadow-main),
+    0 1px 3px var(--shadow-light);
+}
+
+.video-card::before {
+  content: '';
+  position: absolute;
+  inset: -2.5px;
+  border: var(--line-gold) solid var(--gold);
+  border-radius: 13px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.video-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--wood-light);
+  box-shadow:
+    0 6px 18px var(--shadow-main),
+    0 2px 8px var(--shadow-light);
+}
+
+.video-card:hover::before {
+  opacity: 0.7;
+}
+
+.video-card .cover {
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+
+.video-card .cover img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  display: block;
+  transition: filter 0.4s ease-in-out;
+}
+
+.video-card:hover .cover img {
+  filter: brightness(1.03);
+}
+
+.video-card .play-count {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(92, 74, 58, 0.78);
+  color: var(--text-on-primary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-family: var(--font-number);
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 0.5px solid rgba(212, 190, 152, 0.3);
+}
+
+.video-card .body {
+  padding: 8px 10px 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.video-card .title {
+  color: var(--text-body);
+  text-decoration: none;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 4px;
+  transition: color 0.3s ease-in-out;
+}
+
+.video-card .title:hover {
+  color: var(--wood-deep);
+}
+
+.video-card .meta {
+  font-size: 11px;
+  color: var(--text-aux);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.video-card .meta .up-avatar {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--gold);
+}
+
+.video-card .stats {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-aux);
+  margin-top: 3px;
+}
+
+.video-card .time-info {
+  font-size: 10px;
+  color: var(--text-aux);
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.video-card .bv-id {
+  font-size: 10px;
+  color: var(--text-aux);
+  opacity: 0.6;
+  font-family: "SF Mono", "Consolas", monospace;
+}
+
+.video-card .badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.badge-cat {
+  background: rgba(191, 168, 142, 0.2);
+  color: var(--wood-deep);
+}
+
+.badge-score {
+  background: rgba(120, 135, 100, 0.18);
+  color: var(--color-success);
+}
+
+/* ----- 10. 筛选栏 ----- */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-bar input[type="text"] {
+  background: rgba(229, 223, 213, 0.7);
+  border: var(--line-main) solid var(--wood-light);
+  color: var(--text-body);
+  padding: 9px 14px;
+  border-radius: var(--radius);
+  font-size: var(--fs-body);
+  font-family: var(--font-sans);
+  flex: 1;
+  min-width: 180px;
+  outline: none;
+  transition: border-color 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+}
+
+.filter-bar input[type="text"]:focus {
+  border-color: var(--wood-deep);
+  box-shadow: 0 0 0 3px rgba(212, 190, 152, 0.25);
+}
+
+.filter-bar input::placeholder {
+  color: var(--text-aux);
+  opacity: 0.6;
+}
+
+.filter-bar select {
+  background: rgba(229, 223, 213, 0.7);
+  border: var(--line-main) solid var(--wood-light);
+  color: var(--text-body);
+  padding: 9px 14px;
+  border-radius: var(--radius);
+  font-size: var(--fs-caption);
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.3s ease-in-out;
+}
+
+.filter-bar select:focus {
+  border-color: var(--wood-deep);
+}
+
+/* ----- 11. 分类标签 ----- */
+.cat-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.cat-tag {
+  background: rgba(199, 167, 150, 0.15);
+  color: var(--wood-deep);
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: var(--fs-label);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  border: 1px solid rgba(191, 168, 142, 0.45);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.cat-tag:hover {
+  background: rgba(191, 168, 142, 0.28);
+  border-color: var(--wood-light);
+  color: var(--text-heading);
+  transform: translateY(-1px);
+}
+
+.cat-tag.active {
+  background: var(--wood-deep);
+  color: var(--text-on-primary);
+  border-color: var(--wood-deep);
+}
+
+/* ----- 12. 进度条 ----- */
+.progress-box {
+  background: rgba(229, 223, 213, 0.6);
+  border-radius: var(--radius);
+  padding: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  font-family: "SF Mono", "Consolas", monospace;
+  font-size: var(--fs-label);
+  color: var(--text-aux);
+  border: 1px solid rgba(191, 168, 142, 0.4);
+  line-height: 1.6;
+}
+
+.progress-box .line {
+  padding: 1px 0;
+}
+
+/* ----- 13. 状态提示 ----- */
+.status {
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+
+.status a {
+  text-decoration: underline;
+}
+
+.status-ok {
+  background: rgba(120, 135, 100, 0.18);
+  color: var(--color-success);
+  border: 1px solid rgba(120, 135, 100, 0.35);
+}
+
+.status-ok a {
+  color: var(--color-success);
+}
+
+.status-err {
+  background: rgba(150, 100, 85, 0.14);
+  color: var(--color-error);
+  border: 1px solid rgba(150, 100, 85, 0.35);
+}
+
+.status-info {
+  background: rgba(120, 130, 115, 0.14);
+  color: var(--color-info);
+  border: 1px solid rgba(120, 130, 115, 0.35);
+}
+
+.status-info a {
+  color: var(--wood-deep);
+}
+
+/* ----- 14. 提示文字 ----- */
+.hint {
+  font-size: 11px;
+  color: var(--text-aux);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+.hint a {
+  color: var(--wood-deep);
+  text-decoration: underline;
+}
+
+kbd {
+  background: rgba(191, 168, 142, 0.2);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: "SF Mono", "Consolas", monospace;
+  font-size: 12px;
+  border: 1px solid rgba(191, 168, 142, 0.4);
+  color: var(--text-body);
+}
+
+/* ----- 15. 页面标题 ----- */
+h1 {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h1);
+  font-weight: 600;
+  color: var(--text-heading);
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  margin-bottom: var(--space-md);
+}
+
+h1::after {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 1px;
+  background: var(--gold);
+  margin-top: var(--space-sm);
+  opacity: 0.6;
+}
+
+/* ----- 16. 列表 ----- */
+ol {
+  color: var(--text-body);
+  font-size: var(--fs-body);
+  line-height: 2;
+  padding-left: 20px;
+}
+
+ol li {
+  padding-left: 4px;
+}
+
+/* ----- 17. 全局动效降级（无障碍）----- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .card:hover,
+  .video-card:hover,
+  .stat-card:hover {
+    transform: none;
+  }
+}
+
+/* ----- 18. 响应式 ----- */
+@media (max-width: 768px) {
+  :root {
+    --fs-h1: 1.5rem;
+    --fs-h2: 1.2rem;
+  }
+
+  .navbar {
+    padding: 10px 14px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .container {
+    padding: 12px;
+  }
+
+  .container.wide {
+    padding: 12px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+  }
+
+  .filter-bar input[type="text"] {
+    min-width: 100%;
+  }
+}
+
+/* ----- 19. 打印样式 ----- */
+@media print {
+  body {
+    background: white;
+    color: #333;
+  }
+  .navbar {
+    position: static;
+  }
+  .card,
+  .video-card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}

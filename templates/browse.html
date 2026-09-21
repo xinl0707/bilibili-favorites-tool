@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}浏览视频 - B站收藏夹工具{% endblock %}
+{% block container_class %} wide{% endblock %}
+{% block content %}
+<h1 style="font-size:20px; margin-bottom:12px;">📖 浏览视频</h1>
+
+<div class="filter-bar">
+    <input type="text" id="search" placeholder="搜索标题或UP主..." oninput="doFilter()">
+    <select id="folder-filter" onchange="doFilter()">
+        <option value="">全部收藏夹</option>
+    </select>
+    <select id="sort-by" onchange="doFilter()">
+        <option value="collect">按收藏量</option>
+        <option value="play">按播放量</option>
+        <option value="danmaku">按弹幕数</option>
+    </select>
+    <button class="btn btn-secondary btn-sm" onclick="doFilter()">全部</button>
+</div>
+<div class="cols-bar">
+    <span>每行:</span>
+    <input type="range" id="cols-slider" min="2" max="6" value="4" oninput="setCols(this.value)">
+    <span id="cols-label">4列</span>
+    <span style="margin-left:12px; color:#666;">显示 <span id="show-count">0</span>/<span id="total-count">0</span></span>
+</div>
+
+<div id="video-grid" class="grid" style="grid-template-columns: repeat(4, 1fr);"></div>
+<div id="loading" style="text-align:center; color:#555; padding:16px; font-size:13px;"></div>
+
+<script>
+let allVideos = [];
+let filtered = [];
+let cols = 4;
+let PAGE = 80;
+let shown = 0;
+
+function fmt(n) {
+    if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + 'w';
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return n.toString();
+}
+
+function setCols(c) {
+    cols = parseInt(c);
+    document.getElementById('cols-label').textContent = c + '列';
+    document.getElementById('video-grid').style.gridTemplateColumns = 'repeat(' + c + ', 1fr)';
+}
+
+function makeCard(v) {
+    return '<div class="video-card">' +
+        '<a href="' + v.链接 + '" target="_blank" class="cover">' +
+        '<img src="' + v.封面 + '" loading="lazy" onerror="this.style.display=\'none\'">' +
+        '<div class="play-count">▶ ' + fmt(v.播放) + '</div></a>' +
+        '<div class="body"><div class="info">' +
+        '<a href="' + v.链接 + '" target="_blank" class="title">' + v.标题 + '</a>' +
+        '<div class="meta"><img src="' + v.头像 + '" class="up-avatar" onerror="this.style.display=\'none\'">' + v.UP + ' | ' + v.时长 + '</div>' +
+        '<div class="stats"><span>▶ ' + fmt(v.播放) + '</span><span>★ ' + fmt(v.收藏) + '</span><span>💬 ' + fmt(v.弹幕) + '</span></div>' +
+        '<div class="time-info">' + v.上传时间 + ' | 收藏: ' + v.收藏时间 + '</div>' +
+        '<div class="bv-id">' + v.BV + '</div>' +
+        '</div></div></div>';
+}
+
+function loadMore() {
+    if (shown >= filtered.length) {
+        document.getElementById('loading').textContent = filtered.length ? '— 没有更多了 —' : '';
+        return;
+    }
+    const end = Math.min(shown + PAGE, filtered.length);
+    document.getElementById('video-grid').insertAdjacentHTML('beforeend', filtered.slice(shown, end).map(makeCard).join(''));
+    shown = end;
+    document.getElementById('show-count').textContent = shown;
+    document.getElementById('loading').textContent = shown < filtered.length ? '滚动加载更多...' : '';
+}
+
+function doFilter() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const folder = document.getElementById('folder-filter').value;
+    const sortBy = document.getElementById('sort-by').value;
+    filtered = allVideos.filter(v => {
+        const ms = !q || v.标题.toLowerCase().includes(q) || v.UP.toLowerCase().includes(q);
+        const mf = !folder || v.收藏夹 === folder;
+        return ms && mf;
+    });
+    if (sortBy === 'play') filtered.sort((a, b) => b.播放 - a.播放);
+    else if (sortBy === 'danmaku') filtered.sort((a, b) => b.弹幕 - a.弹幕);
+    else filtered.sort((a, b) => b.收藏 - a.收藏);
+    document.getElementById('video-grid').innerHTML = '';
+    shown = 0;
+    loadMore();
+}
+
+window.addEventListener('scroll', function() {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 400) loadMore();
+});
+
+Promise.all([
+    fetch('/api/videos').then(r => r.json()),
+    fetch('/api/folders').then(r => r.json())
+]).then(([videos, folders]) => {
+    allVideos = videos;
+    document.getElementById('total-count').textContent = videos.length;
+    const select = document.getElementById('folder-filter');
+    folders.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f; opt.textContent = f;
+        select.appendChild(opt);
+    });
+    doFilter();
+    setCols(cols);
+});
+</script>
+{% endblock %}

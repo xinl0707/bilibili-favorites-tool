@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}爬取 - B站收藏夹工具{% endblock %}
+{% block content %}
+<h1>🕷️ 爬取收藏夹</h1>
+
+<!-- ====== 爬取控制卡片 ====== -->
+<div class="card">
+    <div class="card-title">开始爬取</div>
+    <p style="color:var(--text-aux); font-size:13px; margin-bottom:12px;">
+        每次爬取会保存为一个独立快照，可在导航栏切换查看不同次的数据。
+    </p>
+    <div id="status-box"></div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="start-btn" onclick="startCrawl()">🚀 开始爬取</button>
+        <button class="btn btn-secondary" id="sim-btn" onclick="toggleSimPanel()">🔍 查看所有错误类型</button>
+    </div>
+</div>
+
+<!-- ====== 错误模拟面板 ====== -->
+<div class="card" id="sim-panel" style="display:none;">
+    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>🔍 错误类型参考 — 点击任意错误查看详情与解决方案</span>
+        <button class="btn btn-secondary btn-sm" onclick="toggleSimPanel()">✕ 收起</button>
+    </div>
+    <p style="color:var(--text-aux); font-size:12px; margin-bottom:12px;">
+        以下是爬取过程中可能出现的所有错误类型。点击可查看详细的原因分析和解决办法。<br>
+        也可点击"模拟此错误"按钮在下方查看实际展示效果。
+    </p>
+    <div id="sim-list" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    <div id="sim-detail" style="margin-top:12px;"></div>
+</div>
+
+<!-- ====== 错误详情卡片（真实错误时显示）===== -->
+<div id="error-card" class="card" style="display:none; border-color:var(--color-error);">
+    <div class="card-title" style="color:var(--color-error); display:flex; align-items:center; gap:8px;">
+        <span style="font-size:24px;">⚠️</span>
+        <span id="error-title">错误标题</span>
+        <span id="error-code" style="font-size:11px; background:rgba(150,100,85,0.15); padding:2px 8px; border-radius:4px; font-weight:normal;"></span>
+    </div>
+    <div id="error-message" style="color:var(--color-error); font-size:13px; margin-bottom:12px; padding:8px 12px; background:rgba(150,100,85,0.08); border-radius:6px;"></div>
+
+    <!-- 严重程度标签 -->
+    <div style="margin-bottom:12px;">
+        <span id="error-severity" style="font-size:11px; padding:3px 10px; border-radius:12px; font-weight:600;"></span>
+        <span id="error-category" style="font-size:11px; color:var(--text-aux); margin-left:8px;"></span>
+    </div>
+
+    <!-- 原因分析（可折叠） -->
+    <details open style="margin-bottom:10px;">
+        <summary style="cursor:pointer; font-weight:600; color:var(--text-heading); font-size:14px; padding:6px 0;">
+            🔍 原因分析
+        </summary>
+        <div id="error-cause" style="padding:10px 14px; background:rgba(191,168,142,0.1); border-radius:6px; font-size:13px; line-height:1.7; color:var(--text-body); margin-top:4px;"></div>
+    </details>
+
+    <!-- 解决办法（可折叠） -->
+    <details open style="margin-bottom:10px;">
+        <summary style="cursor:pointer; font-weight:600; color:var(--text-heading); font-size:14px; padding:6px 0;">
+            🛠️ 解决办法
+        </summary>
+        <div id="error-solution" style="padding:10px 14px; background:rgba(120,135,100,0.08); border-radius:6px; font-size:13px; line-height:2; color:var(--text-body); margin-top:4px;"></div>
+    </details>
+
+    <!-- 额外建议 -->
+    <div id="error-suggestion" style="padding:8px 12px; background:rgba(212,190,152,0.12); border-radius:6px; font-size:12px; color:var(--text-aux); border-left:3px solid var(--gold);"></div>
+</div>
+
+<!-- ====== 爬取进度 ====== -->
+<div class="card">
+    <div class="card-title">爬取进度</div>
+    <div class="progress-box" id="progress"><div class="line" style="opacity:0.5;">等待开始...</div></div>
+</div>
+
+<script>
+// ========== 爬取逻辑 ==========
+var pollTimer = null;
+var allErrors = []; // 缓存所有错误类型
+
+function startCrawl() {
+    var btn = document.getElementById('start-btn');
+    var box = document.getElementById('status-box');
+    btn.disabled = true; btn.textContent = '⏳ 爬取中...';
+    box.innerHTML = '<div class="status status-info">正在启动...</div>';
+    hideError();
+
+    fetch('/api/crawl/start', {method:'POST'}).then(function(r){return r.json()}).then(function(d){
+        if (d.ok) {
+            box.innerHTML = '<div class="status status-ok">✅ ' + d.msg + ' (快照: ' + d.session + ')</div>';
+            startPolling();
+        } else {
+            box.innerHTML = '<div class="status status-err">❌ ' + d.msg + '</div>';
+            btn.disabled = false; btn.textContent = '🚀 开始爬取';
+        }
+    });
+}
+
+function startPolling() { if (!pollTimer) pollTimer = setInterval(checkStatus, 2000); }
+
+function checkStatus() {
+    fetch('/api/crawl/status').then(function(r){return r.json()}).then(function(d){
+        var p = document.getElementById('progress');
+        var btn = document.getElementById('start-btn');
+        var box = document.getElementById('status-box');
+        p.innerHTML = d.progress.map(function(l){return '<div class="line">'+l+'</div>'}).join('');
+        p.scrollTop = p.scrollHeight;
+        if (d.done) {
+            clearInterval(pollTimer); pollTimer = null;
+            btn.disabled = false; btn.textContent = '🚀 重新爬取';
+            if (d.error || d.error_info) {
+                // 有错误
+                box.innerHTML = '<div class="status status-err">❌ 爬取出错</div>';
+                showError(d.error_info || {title: '错误', message: d.error, cause: '', solution: [], suggestion: '', code: '', category: '', severity: 'fatal'});
+            } else {
+                box.innerHTML = '<div class="status status-ok">🎉 完成！<a href="/browse">去浏览 →</a></div>';
+                hideError();
+            }
+        } else if (d.error) {
+            clearInterval(pollTimer); pollTimer = null;
+            btn.disabled = false; btn.textContent = '🚀 重新爬取';
+            box.innerHTML = '<div class="status status-err">❌ 爬取出错</div>';
+            showError(d.error_info || {title: '错误', message: d.error, cause: '', solution: [], suggestion: '', code: '', category: '', severity: 'fatal'});
+        }
+    });
+}
+
+// ========== 错误展示 ==========
+function showError(info) {
+    if (!info) return;
+    var card = document.getElementById('error-card');
+    card.style.display = '';
+    card.scrollIntoView({behavior: 'smooth', block: 'center'});
+
+    document.getElementById('error-title').textContent = (info.simulated ? '[模拟] ' : '') + (info.title || '未知错误');
+    document.getElementById('error-code').textContent = info.code || '';
+    document.getElementById('error-message').textContent = info.message || '';
+    document.getElementById('error-cause').textContent = info.cause || '暂无详细分析';
+    document.getElementById('error-solution').innerHTML = (info.solution || []).map(function(s) {
+        return '<div style="margin-bottom:4px;">' + s + '</div>';
+    }).join('');
+    document.getElementById('error-suggestion').textContent = info.suggestion || '';
+    document.getElementById('error-category').textContent = '分类: ' + (info.category || '未知');
+
+    // 严重程度标签
+    var sev = document.getElementById('error-severity');
+    var sevMap = {
+        'fatal': {text: '🔴 致命错误', bg: 'rgba(150,100,85,0.18)', color: 'var(--color-error)'},
+        'partial': {text: '🟡 部分失败', bg: 'rgba(160,130,85,0.18)', color: 'var(--color-warning)'},
+        'warning': {text: '🟢 警告', bg: 'rgba(120,135,100,0.18)', color: 'var(--color-success)'}
+    };
+    var s = sevMap[info.severity] || sevMap['fatal'];
+    sev.textContent = s.text;
+    sev.style.background = s.bg;
+    sev.style.color = s.color;
+}
+
+function hideError() {
+    document.getElementById('error-card').style.display = 'none';
+}
+
+// ========== 错误模拟面板 ==========
+function toggleSimPanel() {
+    var panel = document.getElementById('sim-panel');
+    var isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? '' : 'none';
+    if (isHidden && !allErrors.length) {
+        loadSimErrors();
+    }
+    if (isHidden) panel.scrollIntoView({behavior: 'smooth'});
+}
+
+function loadSimErrors() {
+    fetch('/api/crawl/errors').then(function(r){return r.json()}).then(function(errors) {
+        allErrors = errors;
+        // 按分类分组
+        var cats = {};
+        errors.forEach(function(e) {
+            if (!cats[e.category]) cats[e.category] = [];
+            cats[e.category].push(e);
+        });
+
+        var html = '';
+        Object.keys(cats).forEach(function(cat) {
+            html += '<div style="width:100%; margin-top:8px;"><strong style="font-size:12px; color:var(--text-aux);">' + cat + '</strong></div>';
+            cats[cat].forEach(function(e) {
+                var sevIcon = e.severity === 'fatal' ? '🔴' : e.severity === 'partial' ? '🟡' : '🟢';
+                html += '<div class="sim-tag" onclick="showSimDetail(\'' + e.code + '\')" ' +
+                    'style="cursor:pointer; padding:5px 10px; border-radius:14px; font-size:11px; ' +
+                    'border:1px solid rgba(191,168,142,0.4); background:rgba(191,168,142,0.08); ' +
+                    'transition:all 0.2s; user-select:none;" ' +
+                    'onmouseover="this.style.background=\'rgba(191,168,142,0.2)\';this.style.borderColor=\'var(--wood-light)\'" ' +
+                    'onmouseout="this.style.background=\'rgba(191,168,142,0.08)\';this.style.borderColor=\'rgba(191,168,142,0.4)\'" ' +
+                    'title="点击查看详情">' + sevIcon + ' ' + e.code + ' ' + e.title + '</div>';
+            });
+        });
+        document.getElementById('sim-list').innerHTML = html;
+    });
+}
+
+function showSimDetail(code) {
+    var e = null;
+    for (var i = 0; i < allErrors.length; i++) {
+        if (allErrors[i].code === code) { e = allErrors[i]; break; }
+    }
+    if (!e) return;
+
+    var detail = document.getElementById('sim-detail');
+    detail.innerHTML =
+        '<div style="border:1px solid rgba(191,168,142,0.4); border-radius:8px; padding:14px; background:rgba(247,243,236,0.5);">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+        '<strong style="color:var(--text-heading);">' + e.code + ' — ' + e.title + '</strong>' +
+        '<button class="btn btn-secondary btn-sm" onclick="simulateError(\'' + e.code + '\')">⚡ 模拟此错误</button>' +
+        '</div>' +
+        '<div style="font-size:12px; color:var(--color-error); margin-bottom:8px; padding:6px 10px; background:rgba(150,100,85,0.06); border-radius:4px;">📋 ' + e.message + '</div>' +
+        '<div style="font-size:12px; color:var(--text-body); margin-bottom:6px;"><strong>原因：</strong>' + e.cause + '</div>' +
+        '<div style="font-size:12px; color:var(--text-body);"><strong>解决步骤：</strong>' +
+        e.solution.map(function(s){return '<div style="margin:3px 0; padding-left:8px;">' + s + '</div>';}).join('') +
+        '</div>' +
+        (e.suggestion ? '<div style="font-size:11px; color:var(--text-aux); margin-top:8px; padding:6px 10px; background:rgba(212,190,152,0.1); border-radius:4px;">' + e.suggestion + '</div>' : '') +
+        '</div>';
+    detail.scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+
+function simulateError(code) {
+    // 先stop之前的轮询
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+
+    fetch('/api/crawl/simulate/' + code).then(function(r){return r.json()}).then(function(d) {
+        if (d.ok) {
+            // 直接展示错误
+            fetch('/api/crawl/status').then(function(r){return r.json()}).then(function(st) {
+                var box = document.getElementById('status-box');
+                box.innerHTML = '<div class="status status-err">⚠️ 模拟错误: ' + code + '</div>';
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('start-btn').textContent = '🚀 重新爬取';
+                if (st.error_info) showError(st.error_info);
+            });
+        }
+    });
+}
+
+// 初始加载
+checkStatus();
+loadSimErrors();
+</script>
+
+<style>
+/* 错误模拟面板的轻量补充样式 */
+.sim-tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px var(--shadow-light);
+}
+details summary {
+    list-style: none;
+}
+details summary::-webkit-details-marker {
+    display: none;
+}
+details summary::before {
+    content: '▸ ';
+    display: inline-block;
+    transition: transform 0.2s;
+    font-size: 12px;
+}
+details[open] summary::before {
+    content: '▾ ';
+}
+</style>
+{% endblock %}

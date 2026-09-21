@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}B站收藏夹工具{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">📺 B站收藏夹工具</a>
+        <div class="session-bar" id="session-bar"></div>
+        <div class="links">
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}">首页</a>
+            <a href="/crawl" class="{% if request.path == '/crawl' %}active{% endif %}">爬取</a>
+            <a href="/browse" class="{% if request.path == '/browse' %}active{% endif %}">浏览</a>
+            <a href="/study" class="{% if request.path == '/study' %}active{% endif %}">学习精选</a>
+            <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}">设置</a>
+        </div>
+    </nav>
+    <div class="container{% block container_class %}{% endblock %}">
+        {% block content %}{% endblock %}
+    </div>
+    <script>
+    (function() {
+        var bar = document.getElementById('session-bar');
+        if (!bar) return;
+
+        function loadSessions() {
+            fetch('/api/sessions').then(function(r) { return r.json(); }).then(function(sessions) {
+                if (!sessions.length) { bar.innerHTML = ''; return; }
+                var html = '<select id="session-select" onchange="switchSession(this.value)">';
+                sessions.forEach(function(s) {
+                    var label = s.id + ' (' + s.video_count + '个视频)';
+                    var sel = s.id === '{{ active_session|default("") }}' ? ' selected' : '';
+                    html += '<option value="' + s.id + '"' + sel + '>' + label + '</option>';
+                });
+                html += '</select>';
+                html += '<button class="btn btn-secondary btn-sm" onclick="deleteCurrentSession()" title="删除当前快照">🗑️</button>';
+                bar.innerHTML = html;
+            });
+        }
+
+        window.switchSession = function(sid) {
+            fetch('/api/sessions/activate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: sid})
+            }).then(function() { location.reload(); });
+        };
+
+        window.deleteCurrentSession = function() {
+            var sel = document.getElementById('session-select');
+            if (!sel || !sel.value) return;
+            if (!confirm('确定删除快照 ' + sel.value + '？')) return;
+            fetch('/api/sessions/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: sel.value})
+            }).then(function() { location.reload(); });
+        };
+
+        loadSessions();
+    })();
+    </script>
+</body>
+</html>

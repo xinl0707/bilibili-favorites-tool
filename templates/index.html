@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}首页 - B站收藏夹工具{% endblock %}
+{% block content %}
+<h1>📺 B站收藏夹工具</h1>
+
+{% if not configured %}
+<div class="status status-info">
+    👋 请先 <a href="/settings">配置Cookie</a>，然后开始爬取。
+</div>
+{% endif %}
+
+<div class="grid-3" style="margin-bottom:16px;">
+    <div class="stat-card">
+        <div class="num">{{ stats.folders if stats else 0 }}</div>
+        <div class="label">收藏夹</div>
+    </div>
+    <div class="stat-card">
+        <div class="num">{{ stats.videos if stats else 0 }}</div>
+        <div class="label">视频</div>
+    </div>
+    <div class="stat-card">
+        <div class="num">{{ sessions|length }}</div>
+        <div class="label">快照数</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <a href="/crawl" class="card" style="text-decoration:none; cursor:pointer;">
+        <div class="card-title">🕷️ 爬取收藏夹</div>
+        <p>爬取数据并保存为快照，可在导航栏切换查看。</p>
+    </a>
+    <a href="/browse" class="card" style="text-decoration:none; cursor:pointer;">
+        <div class="card-title">📖 浏览视频</div>
+        <p>浏览当前快照的所有视频，支持搜索和筛选。</p>
+    </a>
+    <a href="/study" class="card" style="text-decoration:none; cursor:pointer;">
+        <div class="card-title">📚 学习精选</div>
+        <p>自动筛选学习教程类视频，按分类展示。</p>
+    </a>
+    <a href="/settings" class="card" style="text-decoration:none; cursor:pointer;">
+        <div class="card-title">⚙️ 设置</div>
+        <p>配置Cookie，一键获取。</p>
+    </a>
+</div>
+
+{% if configured %}
+<div class="card" style="margin-top:16px;">
+    <div class="card-title">📥 导出Excel（当前快照）</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <a href="/export/collection" class="btn btn-primary btn-sm">收藏夹信息</a>
+        <a href="/export/study" class="btn btn-primary btn-sm">学习教程精选</a>
+        <a href="/export/value" class="btn btn-primary btn-sm">有价值视频推荐</a>
+    </div>
+    <div id="export-list" style="font-size:13px; color:var(--text-aux);"></div>
+</div>
+{% endif %}
+
+<script>
+function loadExports() {
+    fetch('/api/exports').then(function(r) { return r.json(); }).then(function(files) {
+        var el = document.getElementById('export-list');
+        if (!el) return;
+        if (!files.length) { el.innerHTML = '<span style="opacity:0.5;">暂无导出</span>'; return; }
+        el.innerHTML = files.map(function(f) {
+            return '<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(191,168,142,0.3);">' +
+                '<span>' + f.name + ' <span style="opacity:0.5;">' + f.time + ' | ' + (f.size/1024).toFixed(0) + 'KB</span></span>' +
+                '<div style="display:flex; gap:4px;">' +
+                '<a href="/export/download/' + encodeURIComponent(f.name) + '" class="btn btn-secondary btn-sm">下载</a>' +
+                '<button class="btn btn-secondary btn-sm" style="color:#966455;" onclick="delExport(\'' + f.name + '\')">删除</button>' +
+                '</div></div>';
+        }).join('');
+    });
+}
+function delExport(name) {
+    if (!confirm('删除 ' + name + '?')) return;
+    fetch('/api/exports/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename:name})})
+    .then(function(r){return r.json()}).then(function(d){if(d.ok)loadExports();});
+}
+loadExports();
+</script>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}设置 - B站收藏夹工具{% endblock %}
+{% block content %}
+<h1 style="font-size:20px; margin-bottom:16px;">⚙️ 设置</h1>
+
+<div class="card">
+    <div class="card-title">配置B站账号</div>
+
+    <div class="form-group">
+        <label>Cookie</label>
+        <textarea id="cookie" rows="4" placeholder="粘贴Cookie到这里，UID会自动提取">{{ cookie }}</textarea>
+        <div class="hint" id="uid-hint"></div>
+    </div>
+    <input type="hidden" id="uid" value="{{ uid }}">
+
+    <button class="btn btn-primary" onclick="saveConfig()">保存配置</button>
+    <span id="save-msg" style="margin-left:12px; font-size:14px;"></span>
+</div>
+
+<div class="card">
+    <div class="card-title">📋 如何获取Cookie</div>
+    <ol style="color:#94a3b8; font-size:14px; line-height:2; padding-left:20px;">
+        <li>打开 <a href="https://www.bilibili.com" target="_blank" style="color:#60a5fa;">bilibili.com</a> 并登录</li>
+        <li>按 <kbd style="background:#334155; padding:2px 6px; border-radius:4px;">F12</kbd> → 点 <strong style="color:#4ade80;">网络</strong>（Network）标签</li>
+        <li><strong style="color:#ef4444;">刷新页面</strong></li>
+        <li>点任意一个请求 → 右侧找 <strong style="color:#4ade80;">请求标头</strong> → <strong style="color:#4ade80;">cookie</strong></li>
+        <li>复制 <strong style="color:#ef4444;">整行值</strong>（必须包含 SESSDATA=...）粘贴到上方</li>
+    </ol>
+    <div class="status status-err" style="margin-top:12px;">
+        ⚠️ 控制台的 document.cookie 拿不到SESSDATA，必须从网络标签获取！
+    </div>
+</div>
+
+<script>
+function extractUid(cookie) {
+    var m = cookie.match(/DedeUserID=(\d+)/);
+    return m ? m[1] : '';
+}
+
+document.getElementById('cookie').addEventListener('paste', function() {
+    var el = this;
+    setTimeout(function() {
+        var val = el.value;
+        var uid = extractUid(val);
+        if (uid) {
+            document.getElementById('uid').value = uid;
+            document.getElementById('uid-hint').textContent = 'UID: ' + uid;
+            document.getElementById('uid-hint').style.color = '#4ade80';
+        }
+        if (val.indexOf('SESSDATA=') === -1) {
+            document.getElementById('uid-hint').textContent += ' | 缺少SESSDATA，请从Network标签获取';
+            document.getElementById('uid-hint').style.color = '#f59e0b';
+        }
+    }, 50);
+});
+
+function saveConfig() {
+    var uid = document.getElementById('uid').value.trim();
+    var cookie = document.getElementById('cookie').value.trim();
+    var msg = document.getElementById('save-msg');
+    if (!uid || !cookie) {
+        msg.textContent = 'UID和Cookie不能为空';
+        msg.style.color = '#ef4444';
+        return;
+    }
+    fetch('/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'uid=' + encodeURIComponent(uid) + '&cookie=' + encodeURIComponent(cookie)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.ok) {
+            msg.textContent = '保存成功';
+            msg.style.color = '#4ade80';
+        } else {
+            msg.textContent = data.msg;
+            msg.style.color = '#ef4444';
+        }
+    });
+}
+</script>
+{% endblock %}
