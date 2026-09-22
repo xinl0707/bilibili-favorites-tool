@@ -1,106 +1,11 @@
 {% extends "base.html" %}
-{% block title %}学习教程精选 - B站收藏夹工具{% endblock %}
-{% block container_class %} wide{% endblock %}
+{% block title %}学习精选 - B站收藏夹工具{% endblock %}
 {% block content %}
-<h1 style="font-size:20px; margin-bottom:12px;">📚 学习教程精选</h1>
+<h1 style="font-size:20px; margin-bottom:12px;">📚 学习精选</h1>
 
-<div class="cat-nav" id="cat-nav"></div>
-
-<div class="filter-bar">
-    <input type="text" id="search" placeholder="搜索标题或UP主..." oninput="doFilter()">
-    <button class="btn btn-secondary btn-sm" onclick="doFilter()">全部</button>
+<div style="text-align:center; color:#666; padding:100px 16px;">
+    <div style="font-size:52px; margin-bottom:20px;">🚧</div>
+    <div style="font-size:20px; font-weight:600; margin-bottom:10px; color:#444;">待开发</div>
+    <div style="font-size:14px; opacity:0.7;">该功能即将引入 AI 智能识别与分类，敬请期待</div>
 </div>
-<div class="cols-bar">
-    <span>每行:</span>
-    <input type="range" id="cols-slider" min="2" max="6" value="4" oninput="setCols(this.value)">
-    <span id="cols-label">4列</span>
-    <span style="margin-left:12px; color:#666;">显示 <span id="show-count">0</span>/<span id="total-count">0</span></span>
-</div>
-
-<div id="study-grid" class="grid" style="grid-template-columns: repeat(4, 1fr);"></div>
-<div id="loading" style="text-align:center; color:#555; padding:16px; font-size:13px;"></div>
-
-<script>
-let allVideos = [];
-let filtered = [];
-let activeCat = '';
-let cols = 4;
-let PAGE = 80;
-let shown = 0;
-
-function fmt(n) {
-    if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + 'w';
-    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    return n.toString();
-}
-
-function setCols(c) {
-    cols = parseInt(c);
-    document.getElementById('cols-label').textContent = c + '列';
-    document.getElementById('study-grid').style.gridTemplateColumns = 'repeat(' + c + ', 1fr)';
-}
-
-function makeCard(v) {
-    return '<div class="video-card">' +
-        '<a href="' + v.链接 + '" target="_blank" class="cover">' +
-        '<img src="' + v.封面 + '" loading="lazy" onerror="this.style.display=\'none\'">' +
-        '<div class="play-count">▶ ' + fmt(v.播放) + '</div></a>' +
-        '<div class="body"><div class="info">' +
-        '<a href="' + v.链接 + '" target="_blank" class="title">' + v.标题 + '</a>' +
-        '<div class="meta"><img src="' + v.头像 + '" class="up-avatar" onerror="this.style.display=\'none\'">' + v.UP + ' | ' + v.时长 + '</div>' +
-        '<div class="stats"><span>▶ ' + fmt(v.播放) + '</span><span>★ ' + fmt(v.收藏) + '</span><span>💬 ' + fmt(v.弹幕) + '</span></div>' +
-        '<div class="time-info">' + v.上传时间 + ' | 收藏: ' + v.收藏时间 + '</div>' +
-        '<div><span class="badge badge-cat">' + v.分类 + '</span><span class="bv-id">' + v.BV + '</span></div>' +
-        '</div></div></div>';
-}
-
-function loadMore() {
-    if (shown >= filtered.length) {
-        document.getElementById('loading').textContent = filtered.length ? '— 没有更多了 —' : '';
-        return;
-    }
-    const end = Math.min(shown + PAGE, filtered.length);
-    document.getElementById('study-grid').insertAdjacentHTML('beforeend', filtered.slice(shown, end).map(makeCard).join(''));
-    shown = end;
-    document.getElementById('show-count').textContent = shown;
-    document.getElementById('loading').textContent = shown < filtered.length ? '滚动加载更多...' : '';
-}
-
-function doFilter() {
-    const q = document.getElementById('search').value.toLowerCase();
-    filtered = allVideos.filter(v => {
-        const ms = !q || v.标题.toLowerCase().includes(q) || v.UP.toLowerCase().includes(q);
-        const mc = !activeCat || v.分类 === activeCat;
-        return ms && mc;
-    });
-    document.getElementById('study-grid').innerHTML = '';
-    shown = 0;
-    loadMore();
-}
-
-function setCat(cat) {
-    activeCat = activeCat === cat ? '' : cat;
-    document.querySelectorAll('.cat-tag').forEach(t => t.classList.toggle('active', t.dataset.cat === activeCat));
-    doFilter();
-}
-
-window.addEventListener('scroll', function() {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 400) loadMore();
-});
-
-Promise.all([
-    fetch('/api/study').then(r => r.json()),
-    fetch('/api/categories').then(r => r.json())
-]).then(([videos, cats]) => {
-    allVideos = videos;
-    document.getElementById('total-count').textContent = videos.length;
-    const nav = document.getElementById('cat-nav');
-    nav.innerHTML = '<a class="cat-tag active" data-cat="" onclick="setCat(\'\')">全部 (' + videos.length + ')</a>' +
-        Object.entries(cats).map(function([cat, count]) {
-            return '<a class="cat-tag" data-cat="' + cat + '" onclick="setCat(\'' + cat + '\')">' + cat + ' (' + count + ')</a>';
-        }).join('');
-    doFilter();
-    setCols(cols);
-});
-</script>
 {% endblock %}
