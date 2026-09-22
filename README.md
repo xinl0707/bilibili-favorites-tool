@@ -93,6 +93,15 @@ python app.py
 - openpyxl — Excel 导出
 - Pillow — 图片处理
 
+## 🙏 致谢
+
+本项目参考并改编自 [cangkongman/crawling-bilibili-personal-collect](https://github.com/cangkongman/crawling-bilibili-personal-collect)。
+
+- 爬取思路、数据结构设计、卡片式 Excel 导出布局（含封面/头像嵌入）均参考自该项目
+- 本项目在其基础上重写为 Web 端可视化工具，新增了网页浏览、学习精选、多快照管理等特性
+
+感谢原作者的分享。
+
 ## 📄 免责声明
 
 本工具仅供个人学习与技术研究使用。请遵守 B 站相关服务条款，合理控制爬取频率，请勿用于商业用途。所爬取数据的版权归 B 站及原作者所有。
