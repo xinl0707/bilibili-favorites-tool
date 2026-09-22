@@ -5,6 +5,7 @@ import re
 import threading
 import time as _time
 from flask import Flask, render_template, request, jsonify, send_file
+from urllib.parse import quote
 
 import config
 import crawler
@@ -277,7 +278,7 @@ def api_videos():
             'BV': v['BV'], '标题': v['视频信息']['标题'],
             '简介': v['视频信息'].get('简介', ''),
             'UP': v['up主']['昵称'], 'UP_ID': v['up主']['ID'],
-            '封面': v['视频信息']['封面'],
+            '封面': f'/images/covers/{quote(v["收藏夹"])}/{v["BV"]}.jpg',
             '头像': f'/images/avatars/{v["up主"]["ID"]}.jpg',
             '播放': v['观众数据']['播放量'], '收藏': v['观众数据']['收藏量'],
             '弹幕': v['观众数据']['弹幕数量'], '时长': v['视频信息']['时长'],
@@ -311,7 +312,7 @@ def api_study():
             'BV': v['BV'], '标题': v['视频信息']['标题'],
             '简介': v['视频信息'].get('简介', ''),
             'UP': v['up主']['昵称'], 'UP_ID': v['up主']['ID'],
-            '封面': v['视频信息']['封面'],
+            '封面': f'/images/covers/{quote(v["收藏夹"])}/{v["BV"]}.jpg',
             '头像': f'/images/avatars/{v["up主"]["ID"]}.jpg',
             '播放': v['观众数据']['播放量'], '收藏': v['观众数据']['收藏量'],
             '弹幕': v['观众数据']['弹幕数量'], '时长': v['视频信息']['时长'],
